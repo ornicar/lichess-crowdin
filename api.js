@@ -81,7 +81,7 @@ const targets = [
   'pi',
   'pl',
   'ps',
-  'pt-PT',
+  'pt-BR',
   'ro',
   'ru',
   'sa',
@@ -107,11 +107,49 @@ const targets = [
 ];
 
 const lichessToCrowdinTarget = {
-  es: 'es-ES'
+  es: 'es-ES',
+  fp: 'frp',
+  fy: 'fy-NL',
+  ga: 'ga-IE',
+  gu: 'gu-IN',
+  hy: 'hy-AM',
+  jb: 'jbo',
+  kb: 'kba',
+  la: 'la-LA',
+  ml: 'ml-iN',
+  nn: 'nn-NO',
+  pt: 'pt-BR', // yes lichess current pt is pt-BR, not pt-PT
+  sv: 'sv-SE',
+  tc: 'zh-CN',
+  ur: 'ur-IN',
+  zh: 'zh-TW'
 };
 
 function toCrowdinTarget(t) {
   return lichessToCrowdinTarget[t] || t;
+}
+function toLichessTarget(t) {
+  for(let k in lichessToCrowdinTarget) {
+    if (lichessToCrowdinTarget[k] === t) return k;
+  }
+  return t;
+}
+
+function uploadTranslation(lang) {
+  return gen.makeLangCsv(lang).then(filepath => {
+    const args = '&json&import_eq_suggestions=1&language=' + toCrowdinTarget(lang);
+    const url = makeUrl('/upload-translation', args);
+    console.log(filepath);
+    // const filepath = 'dist/site.' + lang + '.csv';
+    return http.post({
+      url: url,
+      formData: {
+        'files[site.csv]': fs.createReadStream(filepath)
+      }
+    }).then(res => {
+      console.log(res);
+    });
+  });
 }
 
 switch (process.argv[2]) {
@@ -121,19 +159,11 @@ switch (process.argv[2]) {
     http.post(makeUrl('/edit-project', args)).then(() => showProject());
     break;
  case 'upload-translation':
-   const lang = process.argv[3];
-   gen.makeLangCsv(lang).then(filepath => {
-     const args = '&import_eq_suggestions=1&language=' + toCrowdinTarget(lang);
-     const url = makeUrl('/upload-translation', args);
-     console.log(url);
-     console.log(filepath);
-     // const filepath = 'dist/site.' + lang + '.csv';
-     http.post({
-       url: url,
-       formData: {
-         'files[site.csv]': fs.createReadStream(filepath)
-       }
-     });
-   });
+   uploadTranslation(process.argv[3]);
+   break;
+ case 'upload-all-translations':
+   targets.reduce((p, target) => {
+     return p.then(() => uploadTranslation(toLichessTarget(target)));
+   }, Promise.resolve());
    break;
 }
