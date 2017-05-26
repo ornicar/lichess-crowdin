@@ -47,14 +47,17 @@ function makeResource(key, source, context) {
   const name = tweak.rename || key;
   let resource, i, english;
   return (doc) => {
-    if (!source.includes('%s') || tweak.type === 'string') {
+    const nbPlaceholders = (source.match(/%s/g) || []).length;
+    if (!nbPlaceholders || tweak.type === 'string') {
       i = 1;
-      english = source.replace(/%s/g, () => '%' + (i++) + '$s');
+      english = source.replace(
+        /%s/g,
+        () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
       resource = doc.ele('string', { name: name }, english);
     } else {
       i = 2;
       let english = source
-        .replace(/%s/, () => '%1$d')
+        .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
         .replace(/%s/g, () => '%' + (i++) + '$d');
       resource = doc.ele('plurals', { name: name });
       resource.ele('item', { quantity: 'one' }, tweak.one || english);
