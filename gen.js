@@ -95,14 +95,14 @@ function makeLangXml(lang) {
       const nbPlaceholders = (source.match(/%s/g) || []).length;
       if (!nbPlaceholders || tweak.type === 'string') {
         i = 1;
-        trans = trans.replace(
+        trans = trans && trans.replace(
           /%s/g,
           () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
         if (tweak.dropTranslations) trans = null;
         resource = doc.ele('string', { name: name }, trans);
       } else {
         i = 2;
-        trans = trans
+        trans = trans && trans
           .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
             .replace(/%s/g, () => '%' + (i++) + '$d');
           resource = doc.ele('plurals', { name: name });
@@ -136,3 +136,5 @@ switch (process.argv[2]) {
     makeLangXml(process.argv[3]);
     break;
 }
+
+module.exports = { makeLangXml };

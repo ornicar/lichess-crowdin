@@ -137,15 +137,14 @@ function toLichessTarget(t) {
 }
 
 function uploadTranslation(lang) {
-  return gen.makeLangCsv(lang).then(filepath => {
+  return gen.makeLangXml(lang).then(filepath => {
     const args = '&json&import_eq_suggestions=1&language=' + toCrowdinTarget(lang);
     const url = makeUrl('/upload-translation', args);
     console.log(filepath);
-    // const filepath = 'dist/site.' + lang + '.csv';
     return http.post({
       url: url,
       formData: {
-        'files[crowdin/translation/source/site.csv]': fs.createReadStream(filepath)
+        'files[test/site.xml]': fs.createReadStream(filepath)
       }
     }).then(res => {
       console.log(res);
