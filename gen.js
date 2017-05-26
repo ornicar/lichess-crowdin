@@ -42,55 +42,97 @@ function findByKey(haystack, needle) {
   return (haystack.find(c => c[0] === needle) || [])[1];
 }
 
-function makeResource(key, source, context) {
-  const tweak = tweaks[key] || {};
-  const name = tweak.rename || key;
-  let resource, i, english;
-  return (doc) => {
-    const nbPlaceholders = (source.match(/%s/g) || []).length;
-    if (!nbPlaceholders || tweak.type === 'string') {
-      i = 1;
-      english = source.replace(
-        /%s/g,
-        () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
-      resource = doc.ele('string', { name: name }, english);
-    } else {
-      i = 2;
-      let english = source
-        .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
-        .replace(/%s/g, () => '%' + (i++) + '$d');
-      resource = doc.ele('plurals', { name: name });
-      resource.ele('item', { quantity: 'one' }, tweak.one || english);
-      resource.ele('item', { quantity: 'other' }, tweak.other || english);
-    }
-    if (context) resource.commentBefore(context.replace('--', '-'));
-  }
-};
+const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
+const xmlAsString = { pretty: true, indent: '  ', newline: '\n', allowEmpty: true };
 
 function makeSourceXml() {
+
+  function makeResource(key, source, context) {
+    const tweak = tweaks[key] || {};
+    const name = tweak.rename || key;
+    let resource, i, english;
+    return (doc) => {
+      const nbPlaceholders = (source.match(/%s/g) || []).length;
+      if (!nbPlaceholders || tweak.type === 'string') {
+        i = 1;
+        english = source.replace(
+          /%s/g,
+          () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
+        resource = doc.ele('string', { name: name }, english);
+      } else {
+        i = 2;
+        english = source
+          .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
+            .replace(/%s/g, () => '%' + (i++) + '$d');
+          resource = doc.ele('plurals', { name: name });
+        resource.ele('item', { quantity: 'one' }, tweak.one || english);
+        resource.ele('item', { quantity: 'other' }, tweak.other || english);
+      }
+      if (context) resource.commentBefore(context.replace('--', '-'));
+    }
+  };
+
   return Promise.all([
     englishTranslations(),
     getContextsByEnglish()
   ]).then(([enTrans, contexts]) => {
-    const resources = xmlBuilder.begin({
-      version: '1.0',
-      encoding: 'UTF-8'
-    }).ele('resources');
+    const resources = xmlBuilder.begin().ele('resources');
     enTrans.forEach(en => {
       makeResource(en[0], en[1], findByKey(contexts, en[1]))(resources);
     });
-    const str = '<?xml version="1.0" encoding="UTF-8"?>\n' + resources.end({
-      pretty: true,
-      indent: '  ',
-      newline: '\n',
-      allowEmpty: true
-    });
+    const str = xmlHeader + resources.end(xmlAsString);
     return fs.writeFile('dist/site.xml', str);
+  });
+}
+
+function makeLangXml(lang) {
+
+  function makeResource(key, source, trans) {
+    const tweak = tweaks[key] || {};
+    const name = tweak.rename || key;
+    let resource, i;
+    return (doc) => {
+      const nbPlaceholders = (source.match(/%s/g) || []).length;
+      if (!nbPlaceholders || tweak.type === 'string') {
+        i = 1;
+        trans = trans.replace(
+          /%s/g,
+          () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
+        if (tweak.dropTranslations) trans = null;
+        resource = doc.ele('string', { name: name }, trans);
+      } else {
+        i = 2;
+        trans = trans
+          .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
+            .replace(/%s/g, () => '%' + (i++) + '$d');
+          resource = doc.ele('plurals', { name: name });
+        if (!tweak.dropTranslations) {
+          resource.ele('item', { quantity: 'one' }, trans);
+          resource.ele('item', { quantity: 'other' }, trans);
+        }
+      }
+    }
+  };
+
+  return Promise.all([
+    englishTranslations(),
+    readTranslations('source/messages/messages.' + lang)
+  ]).then(([enTrans, langTrans]) => {
+    const resources = xmlBuilder.begin().ele('resources');
+    enTrans.forEach(en => {
+      makeResource(en[0], en[1], findByKey(langTrans, en[0]))(resources);
+    });
+    const str = xmlHeader + resources.end(xmlAsString);
+    const filepath = 'dist/site.' + lang + '.xml';
+    return fs.writeFile(filepath, str).then(() => filepath);
   });
 }
 
 switch (process.argv[2]) {
   case 'source-xml':
     makeSourceXml();
+    break;
+  case 'lang-xml':
+    makeLangXml(process.argv[3]);
     break;
 }
