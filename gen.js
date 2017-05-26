@@ -1,4 +1,5 @@
 const fs = require('fs-extra');
+const csvStringify = require('csv-stringify');
 
 const allLangs = 'en,fr,ru,de,tr,sr,lv,bs,da,es,ro,it,fi,uk,pt,pl,nl,vi,sv,cs,sk,hu,ca,sl,az,nn,eo,tp,el,fp,lt,nb,et,hy,af,hi,ar,zh,gl,hr,mk,id,ja,bg,th,fa,he,mr,mn,cy,gd,ga,sq,be,ka,sw,ps,is,kk,io,gu,fo,eu,bn,id,la,jv,ky,pi,as,le,ta,sa,ml,kn,ko,mg,kb,zu,ur,yo,tl,fy,jb,tg,cv,ia,tc'.split(',').filter(l => l != 'en');
 
@@ -74,8 +75,10 @@ function makeSourceCsv() {
         return [key, context, source, source];
       });
     });
-  }).then(body => {
-    return body.map(line => line.join(sep)).join('\n');
+  }).then(content => {
+    csvStringify(content, (err, out) => {
+      fs.writeFile('dist/site.csv', out);
+    });
   });
 }
 
@@ -98,8 +101,8 @@ function makeLangCsv(lang) {
 }
 
 switch (process.argv[2]) {
-  case 'messages':
-    makeSourceCsv().then(csv => { fs.writeFile('dist/site.csv', csv); });
+  case 'source':
+    makeSourceCsv();
     break;
  case 'all':
    makeCsvWithAllLanguages().then(csv => { fs.writeFile('dist/site.csv', csv); });

@@ -1,6 +1,7 @@
 const gen = require('./gen');
 const http = require('request-promise');
 const fs = require('fs-extra');
+const extract = require('extract-zip');
 
 const apiKey = process.env['CROWDIN_API_KEY'];
 if (!apiKey) {
@@ -114,9 +115,9 @@ const lichessToCrowdinTarget = {
   gu: 'gu-IN',
   hy: 'hy-AM',
   jb: 'jbo',
-  kb: 'kba',
+  kb: 'kab',
   la: 'la-LA',
-  ml: 'ml-iN',
+  ml: 'ml-IN',
   nn: 'nn-NO',
   pt: 'pt-BR', // yes lichess current pt is pt-BR, not pt-PT
   sv: 'sv-SE',
@@ -144,12 +145,37 @@ function uploadTranslation(lang) {
     return http.post({
       url: url,
       formData: {
-        'files[site.csv]': fs.createReadStream(filepath)
+        'files[crowdin/translation/source/site.csv]': fs.createReadStream(filepath)
       }
     }).then(res => {
       console.log(res);
     });
   });
+}
+
+function exportAll() {
+  const dir = process.cwd() + '/export/messages';
+  const zipFile = 'export/all.zip';
+  fs.rmdir(dir)
+    .then(() => fs.mkdir(dir))
+    .then(() => {
+      console.log('Rebuilding crowdin project, this can take a while');
+      return http.post(makeUrl('/export', '&json'))
+    }).then(() => {
+      console.log('Downloading all.zip');
+      return http.post(makeUrl('/download/all.zip', ''))
+        .pipe(fs.createWriteStream(zipFile))
+        .on('close', () => {
+          console.log('Extracting');
+          extract(zipFile, {dir: dir}, function (err) {
+            if (err) {
+              console.error(err);
+              process.exit(1);
+            }
+            console.log('Extracted to ' + dir);
+          })
+        });
+    });
 }
 
 switch (process.argv[2]) {
@@ -165,5 +191,8 @@ switch (process.argv[2]) {
    targets.reduce((p, target) => {
      return p.then(() => uploadTranslation(toLichessTarget(target)));
    }, Promise.resolve());
+   break;
+ case 'export-all':
+   exportAll();
    break;
 }
