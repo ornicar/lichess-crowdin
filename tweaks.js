@@ -6,6 +6,7 @@ module.exports = {
     type: 'string'
   },
   nbConnectedPlayers: {
+    type: 'string',
     rename: 'nbPlayers'
   },
   viewAllNbGames: {
@@ -129,9 +130,7 @@ module.exports = {
     type: 'string'
   },
   youAreBetterThanPercentOfPerfTypePlayers: {
-    one: 'You are better than %1$s of one player.', // never gonna happen
-    other: 'You are better than %1$s of %2$d players.',
-    dropTranslations: true
+    type: 'string'
   },
   youDoNotHaveAnEstablishedPerfTypeRating: {
     type: 'string'
@@ -144,5 +143,17 @@ module.exports = {
   },
   youHaveAlreadyRegisteredTheEmail: {
     type: 'string'
+  },
+  freeOnlineChessGamePlayChessNowInACleanInterfaceNoRegistrationNoAdsNoPluginRequiredPlayChessWithComputerFriendsOrRandomOpponents: {
+    rename: 'siteDescription'
+  },
+  theOtherPlayerHasLeftTheGameYouCanForceResignationOrWaitForHim: {
+    rename: 'opponentLeftChoices'
+  },
+  pressShiftPlusClickOrRightClickToDrawCirclesAndArrowsOnTheBoard: {
+    rename: 'analysisShapesHowTo'
+  },
+  yourPerfTypeRatingisRating: {
+    rename: 'yourPerfTypeRatingIsRating'
   }
 };
