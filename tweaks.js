@@ -122,7 +122,7 @@ module.exports = {
   },
   nbPerfTypePlayersThisWeek: {
     one: 'One %2$s player this week.',
-    other: '%1$d %2$s players this week.',
+    other: '%1$s %2$s players this week.',
     dropTranslations: true
   },
   yourPerfTypeRatingisRating: {
