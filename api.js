@@ -54,7 +54,6 @@ const targets = [
   'hy-AM',
   'ia',
   'id',
-  'id',
   'io',
   'is',
   'it',
@@ -144,7 +143,7 @@ function uploadTranslation(lang) {
     return http.post({
       url: url,
       formData: {
-        'files[test/site.xml]': fs.createReadStream(filepath)
+        'files[crowdin/translation/source/site.xml]': fs.createReadStream(filepath)
       }
     }).then(res => {
       console.log(res);
