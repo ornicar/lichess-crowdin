@@ -6,7 +6,6 @@ module.exports = {
     type: 'string'
   },
   nbConnectedPlayers: {
-    type: 'string',
     rename: 'nbPlayers'
   },
   viewAllNbGames: {
@@ -122,7 +121,7 @@ module.exports = {
     type: 'string'
   },
   nbPerfTypePlayersThisWeek: {
-    one: 'One %2$s players this week.',
+    one: 'One %2$s player this week.',
     other: '%1$d %2$s players this week.',
     dropTranslations: true
   },
@@ -154,6 +153,7 @@ module.exports = {
     rename: 'analysisShapesHowTo'
   },
   yourPerfTypeRatingisRating: {
+    type: 'string',
     rename: 'yourPerfTypeRatingIsRating'
   }
 };

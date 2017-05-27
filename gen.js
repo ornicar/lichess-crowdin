@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 const xmlBuilder = require('xmlbuilder');
 const tweaks = require('./tweaks');
 
-const allLangs = 'en,fr,ru,de,tr,sr,lv,bs,da,es,ro,it,fi,uk,pt,pl,nl,vi,sv,cs,sk,hu,ca,sl,az,nn,eo,tp,el,fp,lt,nb,et,hy,af,hi,ar,zh,gl,hr,mk,id,ja,bg,th,fa,he,mr,mn,cy,gd,ga,sq,be,ka,sw,ps,is,kk,io,gu,fo,eu,bn,id,la,jv,ky,pi,as,le,ta,sa,ml,kn,ko,mg,kb,zu,ur,yo,tl,fy,jb,tg,cv,ia,tc'.split(',').filter(l => l != 'en');
+const allLangs = 'en,fr,ru,de,tr,sr,lv,bs,da,es,ro,it,fi,uk,pt,pl,nl,vi,sv,cs,sk,hu,ca,sl,az,nn,eo,tp,el,fp,lt,nb,et,hy,af,hi,ar,zh,gl,hr,mk,id,ja,bg,th,fa,he,mr,mn,cy,gd,ga,sq,be,ka,sw,ps,is,kk,io,gu,fo,eu,bn,la,jv,ky,pi,as,le,ta,sa,ml,kn,ko,mg,kb,zu,ur,yo,tl,fy,jb,tg,cv,ia,tc'.split(',').filter(l => l != 'en');
 
 function readFile(name) {
   return fs.readFile(name, {
@@ -45,28 +45,30 @@ function findByKey(haystack, needle) {
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
 const xmlAsString = { pretty: true, indent: '  ', newline: '\n', allowEmpty: true };
 
+function countPlaceholders(str) {
+  return (str.match(/%s/g) || []).length;
+}
+
+function renamePlaceholders(str, nbPh) {
+  let i = 1;
+  return str.replace(/%s/g, () => nbPh == 1 ? '%s' : ('%' + (i++) + '$s'));
+}
+
 function makeSourceXml() {
 
   function makeResource(key, source, context) {
     const tweak = tweaks[key] || {};
     const name = tweak.rename || key;
-    let resource, i, english;
+    let resource;
     return (doc) => {
-      const nbPlaceholders = (source.match(/%s/g) || []).length;
+      const nbPlaceholders = countPlaceholders(source);
       if (!nbPlaceholders || tweak.type === 'string') {
-        i = 1;
-        english = source.replace(
-          /%s/g,
-          () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
-        resource = doc.ele('string', { name: name }, english);
+        resource = doc.ele('string', { name: name }, renamePlaceholders(source, nbPlaceholders));
       } else {
-        i = 2;
-        english = source
-          .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
-            .replace(/%s/g, () => '%' + (i++) + '$d');
-          resource = doc.ele('plurals', { name: name });
-        resource.ele('item', { quantity: 'one' }, tweak.one || english);
-        resource.ele('item', { quantity: 'other' }, tweak.other || english);
+        source = renamePlaceholders(source, nbPlaceholders);
+        resource = doc.ele('plurals', { name: name });
+        resource.ele('item', { quantity: 'one' }, tweak.one || source);
+        resource.ele('item', { quantity: 'other' }, tweak.other || source);
       }
       if (context) resource.commentBefore(context.replace('--', '-'));
     }
@@ -90,22 +92,16 @@ function makeLangXml(lang) {
   function makeResource(key, source, trans) {
     const tweak = tweaks[key] || {};
     const name = tweak.rename || key;
-    let resource, i;
+    let resource;
     return (doc) => {
-      const nbPlaceholders = (source.match(/%s/g) || []).length;
+      const nbPlaceholders = countPlaceholders(source);
       if (!nbPlaceholders || tweak.type === 'string') {
-        i = 1;
-        trans = trans && trans.replace(
-          /%s/g,
-          () => nbPlaceholders == 1 ? '%s' : ('%' + (i++) + '$s'));
+        trans = trans && renamePlaceholders(trans, nbPlaceholders);
         if (tweak.dropTranslations) trans = null;
         resource = doc.ele('string', { name: name }, trans);
       } else {
-        i = 2;
-        trans = trans && trans
-          .replace(/%s/, () => nbPlaceholders == 1 ? '%d' : '%1$d')
-            .replace(/%s/g, () => '%' + (i++) + '$d');
-          resource = doc.ele('plurals', { name: name });
+        trans = trans && renamePlaceholders(trans, nbPlaceholders);
+        resource = doc.ele('plurals', { name: name });
         if (!tweak.dropTranslations) {
           resource.ele('item', { quantity: 'one' }, trans);
           resource.ele('item', { quantity: 'other' }, trans);
