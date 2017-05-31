@@ -87,7 +87,7 @@ function makeSourceXml() {
   });
 }
 
-function makeLangXml(lang) {
+function makeLangXml(lang, onlyKeys) {
 
   function makeResource(key, source, trans) {
     const tweak = tweaks[key] || {};
@@ -116,7 +116,12 @@ function makeLangXml(lang) {
   ]).then(([enTrans, langTrans]) => {
     const resources = xmlBuilder.begin().ele('resources');
     enTrans.forEach(en => {
-      makeResource(en[0], en[1], findByKey(langTrans, en[0]))(resources);
+      const key = en[0];
+      const tweak = tweaks[key] || {};
+      const name = tweak.rename || key;
+      if (!onlyKeys || onlyKeys.includes(name)) {
+        makeResource(key, en[1], findByKey(langTrans, key))(resources);
+      }
     });
     const str = xmlHeader + resources.end(xmlAsString);
     const filepath = 'dist/site.' + lang + '.xml';
