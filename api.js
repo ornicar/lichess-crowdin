@@ -143,7 +143,7 @@ function uploadTranslation(lang) {
     return http.post({
       url: url,
       formData: {
-        'files[crowdin/translation/source/site.xml]': fs.createReadStream(filepath)
+        'files[master/translation/source/site.xml]': fs.createReadStream(filepath)
       }
     }).then(res => {
       console.log(res);
